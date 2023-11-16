@@ -1,0 +1,381 @@
+# Import necessary packages
+import tensorflow as tf
+from tensorflow.keras import datasets, layers, models
+import matplotlib.pyplot as plt
+import pandas as pd
+
+train_data = pd.read_csv('LP-IV-datasets/CIFR(Ass2&3)/train_data.csv')
+test_data = pd.read_csv('LP-IV-datasets/CIFR(Ass2&3)/test_data.csv')
+
+train_images = train_data.drop('label', axis=1).values
+train_labels = train_data['label'].values
+
+test_images = test_data.drop('label', axis=1).values
+test_labels = test_data['label'].values
+
+train_images = train_images.reshape((train_images.shape[0], 32, 32, 3))
+test_images = test_images.reshape((test_images.shape[0], 32, 32, 3))
+
+# Normalize pixel values to be between 0 and 1
+train_images, test_images = train_images / 255.0, test_images / 255.0
+
+train_labels = tf.keras.utils.to_categorical(train_labels)
+test_labels = tf.keras.utils.to_categorical(test_labels)
+
+# Define the network architecture using Keras Sequential API
+model = models.Sequential()
+model.add(layers.Flatten(input_shape=(32, 32, 3)))
+model.add(layers.Dense(128, activation='relu'))
+model.add(layers.Dense(10, activation='softmax'))
+
+# Print the model summary
+model.summary()
+
+# Compile the model
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+# Train the model using the training data
+history = model.fit(train_images, train_labels, epochs=10, validation_data=(test_images, test_labels))
+
+# Evaluate the model on the test data
+test_loss, test_acc = model.evaluate(test_images, test_labels)
+print(f"\nTest accuracy: {test_acc}")
+
+# Plot training loss and accuracy
+plt.figure(figsize=(12, 4))
+
+# Plot training loss
+plt.subplot(1, 2, 1)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+
+# Plot training accuracy
+plt.subplot(1, 2, 2)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+
+plt.show()
+
+
+---------------------------------------
+
+#CNN_cifar
+# Build the CNN model
+model = models.Sequential()
+model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+
+model.add(layers.Flatten())
+model.add(layers.Dense(64, activation='relu'))
+model.add(layers.Dense(10, activation='softmax'))
+
+
+
+# CNN_mnist
+# Build a CNN model
+model = models.Sequential()
+model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+model.add(layers.MaxPooling2D((2, 2)))
+model.add(layers.Conv2D(64, (3, 3), activation='relu'))
+
+model.add(layers.Flatten())
+model.add(layers.Dense(64, activation='relu'))
+model.add(layers.Dense(10, activation='softmax'))
+
+
+# ff_cifar
+model = models.Sequential()
+model.add(layers.Flatten(input_shape=(32, 32, 3)))
+model.add(layers.Dense(128, activation='relu'))
+model.add(layers.Dense(10, activation='softmax'))
+
+
+# ff_mnist
+model = models.Sequential()
+model.add(layers.Flatten(input_shape=(28, 28, 1)))
+model.add(layers.Dense(128, activation='relu'))
+model.add(layers.Dense(10, activation='softmax'))
+
+
+-------------------------------------------------------
+
+
+# CBOW code
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Embedding, Lambda
+from tensorflow.keras.preprocessing.text import Tokenizer
+import numpy as np
+from sklearn.decomposition import PCA
+import re
+
+data = """
+The speed of transmission is an important point of difference between the two viruses. Influenza has a shorter median incubation period (the time from infection to appearance of symptoms) and a shorter serial interval (the time between successive cases) than COVID-19 virus. The serial interval for COVID-19 virus is estimated to be 5-6 days, while for influenza virus, the serial interval is 3 days. This means that influenza can spread faster than COVID-19. 
+Further, transmission in the first 3-5 days of illness, or potentially pre-symptomatic transmission –transmission of the virus before the appearance of symptoms – is a major driver of transmission for influenza. In contrast, while we are learning that there are people who can shed COVID-19 virus 24-48 hours prior to symptom onset, at present, this does not appear to be a major driver of transmission. 
+The reproductive number – the number of secondary infections generated from one infected individual – is understood to be between 2 and 2.5 for COVID-19 virus, higher than for influenza. However, estimates for both COVID-19 and influenza viruses are very context and time-specific, making direct comparisons more difficult.  
+"""
+
+sentences = data.split(".")
+
+clean_sentences = []
+for sentence in sentences:
+    if sentence == "":
+        continue
+    sentence = re.sub('[^A-Za-z0-9]+', ' ', sentence)
+    sentence = re.sub(r'(?:^| )\w(?:$| )', ' ', sentence).strip()
+    sentence = sentence.lower()
+    clean_sentences.append(sentence)
+
+corpus = clean_sentences
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(corpus)
+sequences = tokenizer.texts_to_sequences(corpus)
+
+print(sequences)
+
+index_to_word_map = {}
+word_to_index_map = {}
+
+for index1, sequence in enumerate(sequences):
+    word_set = clean_sentences[index1].split()
+    for index2, value in enumerate(sequence):
+        index_to_word_map[value] = word_set[index2]
+        word_to_index_map[word_set[index2]] = value
+
+print(index_to_word_map)
+print(word_to_index_map)
+
+vocab_size = len(tokenizer.word_index) + 1
+embedding_size = 10
+window_size = 2
+
+contexts = []
+targets = []
+
+for sequence in sequences:
+    for i in range(window_size, len(sequence) - window_size):
+        context = sequence[i - window_size:i] + sequence[i + 1:i + window_size + 1]
+        target = sequence[i]
+        contexts.append(context)
+        targets.append(target)
+
+X = np.array(contexts)
+Y = np.array(targets)
+
+model = Sequential()
+model.add(Embedding(input_dim=vocab_size, output_dim=embedding_size, input_length=2 * window_size))
+model.add(Lambda(lambda x: tf.reduce_mean(x, axis=1)))
+model.add(Dense(256, activation='relu'))
+model.add(Dense(512, activation='relu'))
+model.add(Dense(units=vocab_size, activation='softmax'))
+
+model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+model.fit(X, Y, epochs=200, verbose=1)
+
+# Get the word embeddings
+embeddings = model.get_weights()[0]
+
+# Perform PCA to reduce the dimensionality of the embeddings
+pca = PCA(n_components=2)
+reduced_embeddings = pca.fit_transform(embeddings)
+
+import matplotlib.pyplot as plt
+# Visualize the embeddings
+plt.figure(figsize=(7, 7))
+for i, word in enumerate(tokenizer.word_index.keys()):
+    x, y = reduced_embeddings[i]
+    plt.scatter(x, y)
+    plt.annotate(word, xy=(x, y), xytext=(5, 2),
+                 textcoords='offset points',
+                 ha='right', va='bottom')
+plt.show()
+
+# Updated test model sentences
+test_sentences = [
+    "the speed of transmission",
+    "shorter median incubation period",
+    "transmission in the first 3-5 days",
+    "reproductive number the number of secondary infections"
+]
+
+for test_sentence in test_sentences:
+    test_words = test_sentence.split(" ")
+    print("Words: ", test_words)
+    x_test = [word_to_index_map.get(word, 0) for word in test_words]  # Use 0 if the word is not in the vocabulary
+    x_test = np.array([x_test], dtype=np.int32)
+    print("Indices: ", x_test)
+    test_predictions = model.predict(x_test)
+    y_pred = np.argmax(test_predictions[0])
+    print("Predictions: ", test_words, " => ", index_to_word_map.get(y_pred))
+    print("\n")
+
+
+
+
+-------------------------------------------------------------------------
+
+
+
+
+#auto encoder
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from tensorflow.keras import layers, models
+import numpy as np
+import matplotlib.pyplot as plt
+
+ecg_data = pd.read_csv('LP-IV-datasets/ECGdataset(Ass4)/ecg_autoencoder_dataset.csv')
+
+scalar = StandardScaler()
+X = scalar.fit_transform(ecg_data.values)
+y = X
+
+X_train,X_test,_,_ = train_test_split(X,X,test_size=0.2,random_state=42)
+
+input_dim = X_train.shape[1]
+encoder = models.Sequential(
+    [
+        layers.Input(shape=(input_dim,)),
+        layers.Dense(32,activation='relu'),
+        layers.Dense(16,activation='relu'),
+        layers.Dense(8,activation='relu'),
+    
+    ]
+)
+
+input_dim = X_train.shape[1]
+decoder = models.Sequential(
+    [
+        layers.Input(shape=(8,)),
+        layers.Dense(16,activation='relu'),
+        layers.Dense(32,activation='relu'),
+        layers.Dense(input_dim,activation='linear'),
+
+    ]
+)
+
+
+autoencoder = models.Sequential([
+    encoder,
+    decoder
+])
+autoencoder.compile(optimizer='adam', loss='mean_squared_error')
+autoencoder.fit(X_train, X_train, epochs=100, batch_size=32, shuffle=True)
+
+
+y_pred = autoencoder.predict(X_test)
+mse = np.mean(np.power((y_pred - X_test),2),axis=1)
+
+
+
+threshold = np.percentile(mse,95)
+
+anamolies = mse > threshold
+
+num_anamolies = np.sum(anamolies)
+print(f"Number of Anomalies: {num_anamolies}")
+
+
+plt.figure(figsize=(12, 6))
+plt.plot(X_test[0], label='Original ECG')
+plt.plot(y_pred[0], label='Reconstructed ECG')
+plt.xlabel('Time')
+plt.ylabel('Amplitude')
+plt.legend()
+plt.title('Normal ECG')
+plt.show()
+
+
+------------------------------------------------------------------------
+
+
+
+# objet vgg16
+
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+from keras.applications import VGG16
+
+image_generator = tf.keras.preprocessing.image.ImageDataGenerator(
+    brightness_range = (0.5,1),
+    channel_shift_range = 0.2,
+    horizontal_flip = True,
+    vertical_flip = True,
+    rescale = 1./255,
+    validation_split = 0.3
+)
+
+
+root_dir = './LP-IV-datasets/Object Detection(Ass6)/caltech-101-img'
+train_images = image_generator.flow_from_directory(
+    directory = root_dir,
+    subset = "training",
+    target_size = (244,244),
+    batch_size = 32,
+    shuffle = True
+)
+
+
+
+test_images = image_generator.flow_from_directory(
+    directory = root_dir,
+    subset = "validation",
+    target_size = (244,244),
+    batch_size = 32,
+    shuffle = True
+)
+
+
+imgs,labels = next(iter(train_images))
+i = 1
+for img,label in zip(imgs,labels):
+    plt.subplot(330 + i)
+    plt.imshow(img)
+    plt.plot()
+    i = i + 1
+    if i == 10:break
+
+
+
+base_model = VGG16(weights = None,include_top = False,input_shape = (244,244,3))
+base_model.Trainable = False
+
+
+
+base_model.load_weights('./LP-IV-datasets/Object Detection(Ass6)/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5')
+
+
+model = tf.keras.models.Sequential([
+    base_model,
+    tf.keras.layers.MaxPooling2D(),
+    tf.keras.layers.Flatten(),
+    tf.keras.layers.Dense(102,activation = "softmax")
+])
+
+
+
+model.summary()
+
+model.compile(loss = "categorical_crossentropy",optimizer = "adam",metrics = ["accuracy"])
+
+
+h = model.fit(train_images,validation_data = test_images,batch_size = 32,epochs = 2,steps_per_epoch = 1)
